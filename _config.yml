@@ -1,1 +1,7 @@
-theme: jekyll-theme-minimal
+theme: minima
+markdown: kramdown
+repo_name: /counterfactual_evaluation_and_recommendation
+
+collections:
+    counterfactual:
+        output: true
