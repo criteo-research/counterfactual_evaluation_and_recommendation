@@ -3,7 +3,7 @@ layout: post
 title: "Beyond the capped estimator"
 order: 4
 show: false
-date: 2020-09-30
+date: 2020-09-07
 ---
 
 > In this post, we will propose some idea to build a low variance estimator with an "acceptable" bias,

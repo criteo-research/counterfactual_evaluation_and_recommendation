@@ -3,7 +3,7 @@ layout: post
 title:  "Capping the importance sampling estimator"
 order: 3
 show: false
-date: 2020-09-25
+date: 2020-09-07
 ---
 
 > This post explains why 'importance sampling' suffers from high variance, and the consequence of the usual capping method.
