@@ -4,7 +4,7 @@ title: Importance weighting estimators
 ---
 
 This blog will contain a series of posts describing the use of the _importance sampling estimator_ in the context of a recommender system.
-The first posts introduce the topic, and should be readable with only basic knowledge of probabilities theory.  
+The first posts introduce the topic, and should be readable with only basic knowledge of probabilities theory. After that, I would like to explain some more advanced details on bias/variance tradeoff which typically arises when using this kind of estimator, and describe a variant we found useful in practice at Criteo.
 
 <div class="home other-pages">
   <ul class="post-list">
