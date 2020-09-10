@@ -13,7 +13,7 @@ In this first post, we will explain what is a recommender system and how to form
 # The recommendation problem
 
 A recommender system is a system designed to propose to a user some content he may like, using the data available on this user.
-Some well-known use case include choosing which movie to recommend to a user, knowing the list of previous movies he liked, or which products to advertise on a merchant website, knowing the past purchase of the user.
+Some well-known use cases include choosing which movie to recommend to a user, knowing the list of previous movies he liked, or which products to advertise on a merchant website, knowing the past purchase of the user.
 
 ![image-title-here]({{site.repo_name}}/assets/images/reco_problem/reco.png){:class="img-responsive"}
 
@@ -25,18 +25,18 @@ A widely used heuristic here is to define the 'relevant' products as the product
 
 ![a supervised learning problem]({{site.repo_name}}/assets/images/reco_problem/supervised_reco.jpg){:class="img-responsive"}
 
-This supervised learning still requires some specific methods when the number of products is large. The most typical one is the 'matrix factorization' algorithm. You can find online many good description of this algorithm, for example on [wikipedia](https://en.wikipedia.org/wiki/Matrix_factorization_(recommender_systems))
+This supervised learning still requires some specific methods when the number of products is large. The most typical one is the 'matrix factorization' algorithm. You can find online many good descriptions of this algorithm, for example on [wikipedia](https://en.wikipedia.org/wiki/Matrix_factorization_(recommender_systems))
 
-Let's note that the algorithms in this family only use the organic data on the user.  Organic data sets involve logs of user behavior i.e. associations between items that are interacted with by the same user.  Importantly these models do not use the logs of the recommender system (that contain information about past recommendations and if they were successful or not).  This interaction (or bandit) data set is important - it tells us how well different recommendations in the past actually performed, but it is ignored by lots of traditional recommender systems literature.  How can we leverage bandit data sets?
+Let's note that the algorithms in this family only use the organic data on the user.  Organic data sets involve logs of user behavior i.e. associations between items that are interacted with by the same user.  Importantly these models do not use the logs of the recommender system (that contain information about past recommendations and if they were successful or not).  This interaction (or bandit) data set is important - it tells us how well different recommendations in the past performed, but it is ignored by lots of traditional recommender systems literature.  How can we leverage bandit data sets?
 
 ## Optimizing the recommender system
 
 ### Defining the goal of the recommender system
 
 While predicting the next organic interaction of the user is a powerful heuristic, it is not actually the goal of the recommender system.
-This goal depends of course of the use case, but usually we can define it as retrieving the products the user is most likely to interact with when they are recommended.
-This interaction may be defined by clicks, conversion, likes, ... depending on the exact use case. For example at Criteo we commonly use 'a click followed by a matched sale' to define a successful interaction with our recommender system.
-To simplify, we will just define it by 'a click' in the following text, but keep in mind that the same methods could apply to any kind of reward.
+This goal depends of course on the use case, but usually we can define it as retrieving the products the user is most likely to interact with when they are recommended.
+This interaction may be defined by clicks, conversion, likes, ... depending on the exact use case. For example, at Criteo we commonly use "a click followed by a sale" to define a successful interaction with our recommender system.
+To simplify, we will just define it by "a click" in the following text, but keep in mind that the same methods could apply to any kind of reward.
 
 The problem we are trying to solve is then the following:
 Knowing the history of the user, retrieve the recommendation which would maximize the probability that the user clicks.
@@ -47,7 +47,7 @@ This problem can be formalized as a _contextual bandit_.
 
 A contextual bandit problem is a setting where at the time step $i$:
 - the system observe a random _state_ (sometime also called 'query' or 'context') $X_i$ . In the recommendation setting, $X_i$ will be the list of products liked by a user. The variables $X_i$ are assumed independent and identically distributed (iid)
-- it select an _action_ $A_i$ for this user . Here $A$ will be the recommendation provided to the user.
+- it select an _action_ $A_i$ for this user. Here $A$ will be the recommendation provided to the user.
 - it then receive a _reward_ $R_i$ . Here the reward will be $1$ if the user clicks on the recommendation, and $0$ otherwise. The reward $R_i$ is assumed to depend only of the query and action $X_i$ and $A_i$ at the same timestep.
 
 ![contextual bandit dataset]({{site.repo_name}}/assets/images/reco_problem/bandit_dataset.png){:class="img-responsive"}
@@ -100,8 +100,8 @@ Let's look at a possible model:
 | query 1 |   0.52   |    0.52   |    0.52  | 
 | query 2 |   0.22   |    0.22   |   0.22   | 
 
-This model would perform quite well according to metrics like 'RMSE'. Indeed it does a decent job at predicting the probabilities of click.
-However, it does not help to choose an action, as its prediction does not depend on the action !
+This model would perform quite well according to metrics like 'RMSE'. Indeed, it does a decent job at predicting the probabilities of click.
+However, it does not help to choose an action, as its prediction does not depend on the action!
  
 Compare now to this other model:
 
@@ -110,7 +110,7 @@ Compare now to this other model:
 | query 2 |   0.35   |    0.4   |    0.35  | 
 
 This second model would perform worse according to RMSE than the previous one (because the values it outputs are quite far from the actual probability of a click)
-However, it does correctly pick action b over action a on both queries, and is therefore more useful.
+However, it does correctly pick action b over action a on both queries and is therefore more useful.
 
 Let's note also that the prediction on Action C does not impact at all the RMSE (because we have no data there), while it might actually perform totally differently.
   

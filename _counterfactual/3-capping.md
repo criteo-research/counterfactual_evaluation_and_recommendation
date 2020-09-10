@@ -42,11 +42,11 @@ Variance of $IPS$ is more or less proportional to $ \mathbb{E}(W²) $ . How big 
 ### Variance of the importance weight
 
 Let's note that the expectation of the importance weight is always $1$, so $ \mathbb{E}(W²) = Var(W) +1 $  
-( here is the proof: 
+(here is the proof: 
 $$ E(W) = \sum_\limits{a} \pi_0(a) w(a) = \sum_\limits{a} \pi_0(a) \frac{\pi_{test}(a)}{\pi_0(a)}  = \sum_\limits{a} \pi_{test}(a) = 1 $$ )
 
 
-It's variance however depends on how different $\pi_0$ and $\pi_{test}$ are.
+Its variance however depends on how different $\pi_0$ and $\pi_{test}$ are.
 
 Let's look at what happen on a few examples:
 
@@ -61,12 +61,12 @@ The $w$ is then either $\frac{1}{ min_a(\pi_0(a)}$ , with probability $ min_a(\p
 
 In practice, it is difficult to avoid having any actions with very low propensity. Indeed:
  - assigning significant propensity to some actions which are known (or strongly suspected) to perform badly would degrade the whole system performances
- - when he action space is large, it is just not possible to assign a large probability to every action.
+ - when the action space is large, it is just not possible to assign a large probability to every action.
 
 
 ### Hidden variance
 
-When the probability of an action is really low, the associated weigh can grow really large, but is almost never observed. 
+When the probability of an action is very close to zero the associated weigh can grow really large, but is almost never observed. 
 
 For example, let's assume that an action $a_0$ has:
 - probability $0.1$ on $\pi_{test}$ 
@@ -75,21 +75,21 @@ For example, let's assume that an action $a_0$ has:
 - the other actions have reasonable weights (lets say less than 10)
 - and we collect $10^7$ samples of $A$ following $\pi_0$
 
-What would we observe in such a case ?
-- With a probability of about $0.01$, we would observe one sample with the action $a_0$ and the giant $10^9$ weight. In such case, we would conclude that the variance is crazily high (this single sample has more total weight than the 9999999 other ! ) and that the estimator is not usable.
-- But with a high probability (around $0.99$), we won't observe the action $a_0$ at all. In such a case, the empirical variance of $w$ might look low, because we observed only some $w < 10$. It is important to realize that this is wrong ! Indeed, the estimated value we get from the $ips$ is in the case underestimating the number of clicks we would get with $\pi_{test}$, because it does not account for the value we would get from playing action $a_0$.
+What would we observe in such a case?
+- With a probability of about $0.01$, we would observe one sample with the action $a_0$ and the giant $10^9$ weight. In such case, we would conclude that the variance is crazily high (this single sample has more total weight than the 9999999 other! ) and that the estimator is not usable.
+- But with a high probability (around $0.99$), we won't observe the action $a_0$ at all. In such a case, the empirical variance of $w$ might look low, because we observed only some $w < 10$. It is important to realize that this is wrong! Indeed, the estimated value we get from the $ips$ is in the case underestimating the number of clicks we would get with $\pi_{test}$, because it does not account for the value we would get from playing action $a_0$.
 
-This "hidden" variance is actually behaving like a bias !
+This "hidden" variance is behaving like a bias!
 
 Let's also note that in the limit case, when the probability of an action following $\pi_0$ becomes exactly 0, the variance becomes low, but the estimator is now biased.
 
 ### Capped importance weight
 
-When the variance is too large, the estimator is no longer useful in practice. Can we lower its variance ?
+When the variance is too large, the estimator is no longer useful in practice. Can we lower its variance?
 
-Since the variance is driven by some outliers, we can lower the variance by removing those outliers. For example removing all samples where $w$ is above a threshold, or replacing $w$ by some maximum value when the true value is higher.
+Since the variance is driven by some outliers, we can lower the variance by removing those outliers. For example, removing all samples where $w$ is above a threshold, or replacing $w$ by some maximum value when the true value is higher.
 
- We can then defined the capped IPS estimator:
+ We can then define the capped IPS estimator:
 
 $$ capped IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \overline{W_i} \times  R_i $$
 
@@ -111,16 +111,16 @@ To summarize:
 
 |            | $\pi_{test}$ not far from $\pi_0$  | $\pi_{test}$ far from $\pi_0$ |
 | IPS        |  unbiased & low variance | unbiased, <span style="color:red">High variance</span>
-| capped IPS | slighlty biased, very low variance | <span style="color:red">Biased</span>, low variance
+| capped IPS | slightly biased, very low variance | <span style="color:red">Biased</span>, low variance
 
-Ideally, we would like a low variance unbiased estimator for all policies. But is this possible ?
+Ideally, we would like a low variance unbiased estimator for all policies. But is this possible?
 
 
 ### No unbiased low variance estimator when $\pi_{test}$ is far from $\pi_0$
 
 Unfortunately, the answer is No, unless we make some additional hypothesis.
 
-Indeed, having  some  large  importance  weights  means  that  the  test  policy  takes  some  actions  which  were  very uncommon under the logging policy.  We just did not collect enough data on those actions to get any low variance estimate of what would happen when they are chosen.
+Indeed, having some large importance weights means that the test policy takes some actions which were very uncommon under the logging policy.  We just did not collect enough data on those actions to get any low variance estimate of what would happen when they are chosen.
 
 In the next post, we will propose some possible additional hypothesis which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$ (well, still not *too* far, there is just no magic for that)
 

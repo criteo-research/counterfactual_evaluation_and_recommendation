@@ -19,8 +19,8 @@ In the previous post:
 
 # Two ideas to go further
 
-We observed that we cannot get a low variance unbiased estimator for what happens when applying $\pi_{test}$, because we do not have enough data on some of the actions it selects. So what we do ? We would like to propose two view points here:
- - we can make an hypothesis on the average reward of those unobserved actions
+We observed that we cannot get a low variance unbiased estimator for what happens when applying $\pi_{test}$, because we do not have enough data on some of the actions it selects. So what we do ? We would like to propose two viewpoints here:
+ - we can make a hypothesis on the average reward of those unobserved actions
  - or we can replace $\pi_{test}$ by an approximate policy $\pi_{test'}$ which should be as similar to $\pi_{test}$ as possible while staying close enough from $\pi_0$ to keep low importance weights.
  
 Interestingly enough, both ideas may lead to the same estimator.
@@ -33,12 +33,12 @@ Before jumping into the equations, let's first look at a simple example to show 
 | $\pi_0$      | 0.8 | 0.2 | 0.00000001 |
 |$\pi_{test}$  | 0.1 | 0.8 | 0.1 |
 |$w$  | 0.125 | 4.0 | 10000000 |
-|Average reward on observed data | 0.05 | 0.055 | Unobserved ! |
+|Average reward on observed data | 0.05 | 0.055 | Unobserved! |
 
 
 The action $a_3$ clearly would make the variance too high.
 Instead of capping we could:
-- make an hypothesis one the average reward of action $a_3$. Looking at the other actions, maybe a reasonable guess would be around $0.05$ ?
+- make a hypothesis one the average reward of action $a_3$. Looking at the other actions, maybe a reasonable guess would be around $0.05$ ?
 - or we could define a policy $\pi_{test'}$ which looks like $\pi_{test}$  but avoids the action $a_3$
 
 |              | Action $a_1$ | Action $a_2$ | Action $a_3$|
@@ -55,7 +55,7 @@ We will now formalize a bit more what we did in those examples.
 
 As already explained, high variance of the $IPS$ is caused by actions with a large associated weight $w(a)$
 
-But let's assume for a moment that the reward $R(a)$ on those actions (let's say those with $w \geq 100$) is always 0. In this case, the ips would becomes:
+But let's assume for a moment that the reward $R(a)$ on those actions (let's say those with $w \geq 100$) is always 0. In this case, the ips would become:
 
 $$IPS = \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } {W_i} \times 1_{ W_i < 100 }  \times  R_i  +  $$
 
@@ -81,14 +81,14 @@ Let's see now some possible hypothesis we could use.
 
 In a recommender system, the set of actions proposed in a context $x$ typically comes from several heuristics (collaborative filtering, bestofs,...) which are tuned to provide at least 'reasonable' actions.
 As a result, the expected reward $\mathbb{E}(R |X=x,A=a)$ in a context $x$ after action $a$ does not vary that much with $a$. 
-On the other hand it may vary by several orders of magnitude with context $x$. So we might write, for the less explored actions: $\mathbb{E}(R(x,a)) \approx \mathbb{E}(R(x))  $. \\
+On the other hand, it may vary by several orders of magnitude with context $x$. So we might write, for the less explored actions: $\mathbb{E}(R(x,a)) \approx \mathbb{E}(R(x))  $. \\
 
-Since the reward $R$ is not exactly the same for each action, we need to be a bit more specific here: To define $\mathbb{E}(R(x))$, we need to specify which policy is used to collect the actions. So we propose two variations:
+Since the reward $R$ is not exactly the same for each action, we need to be a bit more specific here: To define $\mathbb{E}(R(x))$, we need to specify which policy is used to collect the actions. We propose two variations:
 
 - Approximate $\mathbb{E}(R(x,a_{unexplored}))$ by the expected reward using $\pi_0$
 - Approximate $\mathbb{E}(R(x,a_{unexplored}))$ by the expected reward on the explored actions chosen by $\pi_{test}$
 
-We will detail the first option in section 3. Here we focus on the second option, and explain how it lead to the "pointwise capped normalized estimator".\\
+We will detail the first option in section 3. Here we focus on the second option and explain how it lead to the "pointwise capped normalized estimator".\\
 But let's first formalize it:
 
 We would need to approximate the expected reward of an action when it is not explored enough by $\pi_0$, but happens more often with $\pi_{test}$. Those are exactly the actions where the importance weight $w$ is higher than the chosen threshold $c$. \\
@@ -117,7 +117,7 @@ This question is actually closely linked to the choice of how to deal with high 
  - Discard the lines with high weights, effectively setting the weight to 0, and not using those data at all.
  - Or cap the importance weight, replacing $w$ by $min(x,c)$. This method allows to use reward observed on datapoints where $w>c$, it just does not rely on it too much.  
 
-Can we do something similar when applying our approximation ? The answer is yes. To do that, we need a finer definition of the event 'the action is not explored enough'. We propose the following definition:
+Can we do something similar when applying our approximation? The answer is yes. To do that, we need a finer definition of the event 'the action is not explored enough'. We propose the following definition:
 
 Let $U$ an uniform random variable in interval $[0;1]$, independent from anything else. We will say that the action $A$ is 'unexplored' if $w(A) > c \times U $. \\
 This definition is motivated by the following equality:
@@ -128,18 +128,18 @@ In other words, the capped estimator is (in expectation) what we get when we rem
 We can now rewrite our hypothesis: 
 
 We will approximate $$\mathbb{E}_{ \pi_{test} }( R(A,x) | W > c \times U )$$ by $\mathbb{E}\_{ \pi_{test} }( R(A,x) \| W \leq c \times U )$. \\
-The computation unfold in the same way as above:
+The computation unfolds in the same way as above:
 $$\mathbb{E}_{ \pi_{test} }( R(A,x) ) 
 \approx
 \mathbb{E}_{ \pi_{test} }( R(A,x) \times( \mathbf{1}_{ W > c \times U} ))  \frac{1}{ P_{ A \sim \pi_{test} }(  W > c \times U | X=x )} $$
 
 We can notice here that $$ P_{ A \sim \pi_{test} }(  W > c \times U | X= x ) = \mathbb{E}_{\pi_{test}}( \frac{ min(W,c) }{W} | X=x ) = \mathbb{E}_{\pi_{0}} ( min(W,c) | X=x )  $$
-and  this quantity can also be either computed explicitly or estimated by Monte Carlo.
+and this quantity can also be either computed explicitly or estimated by Monte Carlo.
 The estimator we get is thus:
 
  $$ \frac {1}{n} \sum_\limits{i} min( w_i , c ) \times \frac{1}{  \mathbb{E}_{\pi_{0}} (min(W_i,c)| X=x_i ) }$$
 
-This is exactly the "pointwise normalised capped estimator" proposed in section 5.4 of [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030).
+This is exactly the "pointwise normalized capped estimator" proposed in section 5.4 of [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030).
 
 Note that there is actually still a possible problem in practice: $$\mathbb{E}_{\pi_{0}} (min(W_i,c)| X=x_i )$$ may sometimes become very low, leading to a large variance. This can be solved by lowering the capping threshold $c$.
 
@@ -162,7 +162,7 @@ In other words, we would like to choose the policy $\pi_{test}'$ so that it does
 Now, we want to find $\pi_{test}'$ "as close as possible" from $\pi_{test}$ among acceptable policies (ie in the set $\mathcal{B}( \pi_p , c )$). Measuring the "distance" between policies with the KL divergence, we can now define:
 $$ \pi_{test}' := Argmin_{ \pi \in \mathcal{B}( \pi_0 , c ) } KL(\pi_{test} || \pi )  $$
 
-For a fixed $x$, this writes:
+For a fixed $x$, this write:
 $$ \pi_{test}' = Argmin_{\pi}  ( \sum\limits_{a} \pi_{test}(a) log( \pi(a) )   ) \quad under \quad \sum\limits_{a} \pi(a) = 1 \quad and \quad \forall a \quad \pi(a) \leq c \times \pi_p(a) $$
 
 Using the Lagrange multiplier, it is straightforward to check that this solution verifies:
@@ -174,7 +174,7 @@ Now let's define $c' := \frac{c}{ \alpha} $
  
 
 #### Describing the policy $\pi_{test}'$
-We explained that the "pointwise capped normalised" estimator is actually the unbiased importance weighting estimator for a policy $\pi_{test'}$. Let's describe explicitly this policy.
+We explained that the "pointwise capped normalized" estimator is actually the unbiased importance weighting estimator for a policy $\pi_{test'}$. Let's describe explicitly this policy.
 
 
 A sample of the approximate policy $\pi_{test}'$ can be obtain as follow:
@@ -188,8 +188,8 @@ Note that if $w(a) \leq c $ the sample is always accepted. This algorithm could 
 
 ## Additive correction
 
-The "pointwise capped normalised" estimator corrects the capped importance weight by a constant factor to ensure that the expectation of the importance weight is 1. What if instead of a multiplicative factor, we used an additive correction ?
-We can therefore defined the "additive corrected capped normalised" estimator as follow:
+The "pointwise capped normalized" estimator corrects the capped importance weight by a constant factor to ensure that the expectation of the importance weight is 1. What if instead of a multiplicative factor, we used an additive correction?
+We can therefore define the "additive corrected capped normalized" estimator as follow:
 
 $$ \sum\limits_i r_i \times ( min( c, w(a_i,xi) ) + 1 - \mathbb{E}_{a \sim \pi_p}  min( c, w(a,xi) )  ) $$
 
@@ -225,11 +225,11 @@ Since the term we added to the capped importance weight is in $[0;1]$, the varia
 
 ### Experimental results
 
-We implemented this estimator and compared its results with the previously proposed "pointwise capped normalised".
+We implemented this estimator and compared its results with the previously proposed "pointwise capped normalized".
 We observed that:
 - It was giving almost the same results (Correlation was about 0.99)
-- But its variance was a bit lower. This was because in "pointwise capped normalised", when the normalisation in too high, it may become difficult to find the correct capping value without drawing a lot of samples.
-- It requires one single sample of $\pi_{test}$, whereas "pointwise capped normalised" may need a lot of samples to be accurate.
+- But its variance was a bit lower. This was because in "pointwise capped normalized", when the normalization in too high, it may become difficult to find the correct capping value without drawing a lot of samples.
+- It requires one single sample of $\pi_{test}$, whereas "pointwise capped normalized" may need a lot of samples to be accurate.
 - Implementation is also significantly easier.
 
 The fact that the results are closely correlated is not really a surprise:
@@ -239,4 +239,4 @@ The policy $\pi_{test}$ we test are usually not that far from $\pi_0$, which mea
 - Difference in expected reward between both policies is typically no more than 1 or 2%.
 
 Overall, this mean that the difference in the hypothesis we used just change the result by a few %  on a few % of the dataset: overall, it is a second order effect which is usually far below the noise level.
-For all those reason, we ended using mostly this version of the estimator.
+For all those reasons, we ended using mostly this version of the estimator.

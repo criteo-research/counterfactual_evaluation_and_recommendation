@@ -29,10 +29,10 @@ Can we do that only from our offline data?
 The surprising answer is 'Yes, we can', under some rather mild assumptions. More precisely, we will construct an unbiased estimate of how many clicks we would have got with test policy. 
 
 Let's already state those assumptions:
-- we are in a 'contextual bandit' setting. See the previous post for more details, but this mostly means that what's happening at a timestep $i$ does not depend on the other timesteps. 
+- we are in a 'contextual bandit' setting. See the previous post for more details, but this mostly means that what is happening at a timestep $i$ does not depend on the other timesteps. 
 - the policy $\pi_0$ used to collect data must be stochastic and explore all the actions: for any state $x$ and action $a$, $\pi_0$ should play $a$ in state $x$ with a non $0$ probability.
 
-Under those hypothesis, we can estimate the total reward we would have got when using $\pi_{test}$ with the 'Importance Sampling Estimator' (IPS), defined as follow:
+Under those hypotheses, we can estimate the total reward we would have got when using $\pi_{test}$ with the 'Importance Sampling Estimator' (IPS), defined as follow:
 
 <script type="math/tex; mode=display"> ips :=  \frac{1}{n} \times \sum_\limits{ i \in {1...n} } \frac{ \pi_{test}(x_i,a_i) }{ \pi_0(x_i,a_i) } r_i </script>
 
@@ -44,7 +44,7 @@ Let's already try to interpret this formula:
 
 ## A simplified example
 
-To get an intuition on why this formula would work, lets look at a simplified example, with only one single state $x_0$, and two actions, 'red' and 'green'
+To get an intuition on why this formula would work, let us look at a simplified example, with only one single state $x_0$, and two actions, 'red' and 'green'
 
 Let's assume we collected some data with the following policy:
 * $\pi_0(red,x_0) = 0.8$
@@ -60,7 +60,7 @@ Can we tell which results to expect if we follow this new policy?
 
 ![simple example]({{site.repo_name}}/assets/images/reco_problem/iw_simple_example.png){:class="img-responsive"}
 
-As the diagram suggests, the test policy chooses green $4$ times more often than $\pi_0$, so we may expect $4$ time more clicks on green. It also choose red 4 time less often so we should expect 4 times less clicks on red.
+As the diagram suggests, the test policy chooses green $4$ times more often than $\pi_0$, so we may expect $4$ time more clicks on green. It also chooses red 4 time less often so we should expect 4 times less clicks on red.
 
 The final answer is then:
 <script type="math/tex; mode=display"> Clicks_{green} \times \frac{ \pi_{test}(green) } { \pi_{0}(green) } +  Clicks_{red} \times \frac{ \pi_{test}(red) } { \pi_{0}(red) }  = 300 \times \frac{ 0.8 }{0.2}  +  1000 \times \frac{ 0.2 }{0.8} = 1450   </script>
@@ -68,11 +68,11 @@ The final answer is then:
 We can see that the ratios $ \frac{ \pi_{test}(green) } { \pi_{0}(green) } = 4 $ and $ \frac{ \pi_{test}(red) } { \pi_{0}(red) } = 0.25 $ are quite intuitive to apply here, and that the final formula is exactly the $IPS$ estimator has defined above.
 
 
-Note that this is correct because the choice of 'red' or 'green' were made **at random, following a known policy** $\pi_0$. It would **not** be correct anymore if the choice of red / green was depending of some other variables, and the "80% red, 20% green" was only the average on different users. In this case, such a reasoning would suffer from [Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)
+Note that this is correct because the choice of 'red' or 'green' were made **at random, following a known policy** $\pi_0$. It would **not** be correct anymore if the choice of red / green was depending on some other variables, and the "80% red, 20% green" was only the average on different users. In this case, such a reasoning would suffer from [Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)
 
 ### An unbiased estimator
 
-We just estimated, from the data in this example, that using the $\pi_{test}$ policy we would have got 1450 clicks. Does it means that we would observe _exactly_ 1450 clicks if we had collected the data with $\pi_{test}$? Certainly not. This number of clicks with the test policy is a random variable, and we have only an estimator of its average.
+We just estimated, from the data in this example, that using the $\pi_{test}$ policy we would have got 1450 clicks. Does it mean that we would observe _exactly_ 1450 clicks if we had collected the data with $\pi_{test}$? Certainly not. This number of clicks with the test policy is a random variable, and we have only an estimator of its average.
 We will explain further why it is _unbiased_ , which means the following:
 if we replayed infinitely many times the experiment we just did, which is:
 - collect some data with $\pi_0$
@@ -88,11 +88,11 @@ We will name this ratio the 'importance weight' and note it $w$:
 
 <script type="math/tex; mode=display"> w_i := w(a_i,x_i) := \frac{ \pi_{test}(x_i,a_i) }{ \pi_0(x_i,a_i) } </script>
 
-In the general case of course, the users may be all different, and the policy $\pi_0$ is allowed to depend on the user. Why don't we suffer from a Simpson's like paradox?
+In the general case of course, the users may be all different, and the policy $\pi_0$ can depend on the user. Why don't we suffer from a Simpson's like paradox?
 To understand that, let's first note that if we decrease the number of users in the previous experiment, we get (of course) a worse estimator because the variance increases, but it still remains unbiased.
 In particular, it is unbiased even when there is a single user!
  
-So in the general case, we get on each user an unbiased (but high variance) estimator of what would happen when using test policy for this user. By summing those estimator on all users, it is still unbiased (for the population of users), and the relative variance (hopefully, more on that later) goes down. 
+So in the general case, we get on each user an unbiased (but high variance) estimator of what would happen when using test policy for this user. By summing those estimators on all users, it is still unbiased (for the population of users), and the relative variance (hopefully, more on that later) goes down. 
 
 ### Proof of unbiasedness
 
@@ -135,12 +135,12 @@ Using the chain rule, we can now decompose the expectation on the different rand
 
 <script type="math/tex; mode=display"> \mathbb{E}(IPS) =    \sum_\limits{x}  \mathbb{P}(X_1 = x) \sum_\limits{ a \in actionsSet }  \mathbb{P}(A_1 = a | X_1 =x) \times w(a,x) \times \mathbb{E}( R_1  | A_1 = a , X_1 = x  )  </script>
 
-I kept the indice $X_1$, $A_1$ to remind that those are samples from our dataset. This mean that the action is sampled using $\pi_0$ : $ \mathbb{P}(A_1 = a \| X_1 =x) = \pi_0(a,x)  $. Replacing this leads to:
+I kept the indices $X_1$, $A_1$ to remind that those are samples from our dataset. This mean that the action is sampled using $\pi_0$ : $ \mathbb{P}(A_1 = a \| X_1 =x) = \pi_0(a,x)  $. Replacing this leads to:
     
 <script type="math/tex; mode=display"> \mathbb{E}(IPS) =    \sum_\limits{x}  \mathbb{P}(X = x) \sum_\limits{ a \in actionsSet }  \pi_0( a, x) \times w(a,x) \times \mathbb{E}( R  | A = a , X = x  )  </script>
 
 
-We can now note that $ \pi_0(a,x) \times w(a,x) = \pi_0(a,x) \times \frac{\pi_{test}(a,x)}{\pi_0(a,x)} = \pi_{test}(a,x)$  (That's where we need the hypothesis "all actions have a non zero probability under $\pi_0$" to avoid a division by 0.
+We can now note that $ \pi_0(a,x) \times w(a,x) = \pi_0(a,x) \times \frac{\pi_{test}(a,x)}{\pi_0(a,x)} = \pi_{test}(a,x)$  (That's where we need the hypothesis "all actions have a non-zero probability under $\pi_0$" to avoid a division by 0.
 Thus:	
 
 <script type="math/tex; mode=display"> \mathbb{E}(IPS) = \sum_\limits{x}  \mathbb{P}(X = x) \sum_\limits{ a \in actionsSet }   \pi_{test}(a,x) \times \mathbb{E}_R( R  | a , x  ) </script>
@@ -160,11 +160,11 @@ There are several requirements to be able to compute this estimator on your data
 (Note that in our example the list of possible actions depends on the context. This is Ok, the only restriction is that $\pi_{test}$ can only use the actions from the same list)
 
 
-### It means I would have to randomized my data collection policy $\pi_0$. Should I really do that? Wouldn't it kill the performances of my system?
+### It means I would have to randomize my data collection policy $\pi_0$. Should I really do that? Wouldn't it kill the performances of my system?
 
-Randomized does not mean it should be uniformly random ! It is totally Ok to have a policy assigning large probabilities to actions you assume are good, and a tiny one to 'bad' actions. 
+Randomized does not mean it should be uniformly random! It is totally Ok to have a policy assigning large probabilities to actions you assume are good, and a tiny one to 'bad' actions. 
 
-And randomizing a little the policy may actually be a good idea, even if you do not care about conterfactual estimators:
+And randomizing a little the policy may actually be a good idea, even if you do not care about counterfactual estimators:
 - It will bring some diversity to the users. If you make several times a recommendation to the same user, randomizing if a very simple but efficient way to avoid showing the same user always the same crappy recommendation.
 - And it will bring diversity to the models trained on the collected dataset, enabling some exploration of new actions.
 
