@@ -68,7 +68,8 @@ The final answer is then:
 We can see that the ratios $ \frac{ \pi_{test}(green) } { \pi_{0}(green) } = 4 $ and $ \frac{ \pi_{test}(red) } { \pi_{0}(red) } = 0.25 $ are quite intuitive to apply here, and that the final formula is exactly the $IPS$ estimator has defined above.
 
 
-Note that this is correct because the choice of 'red' or 'green' were made **at random, following a known policy** $\pi_0$. It would **not** be correct anymore if the choice of red / green was depending on some other variables, and the "80% red, 20% green" was only the average on different users. In this case, such a reasoning would suffer from [Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)
+Note that this is correct because the choice of 'red' or 'green' were made **at random, following a known policy** $\pi_0$. It would **not** be correct anymore if the choice of red / green was depending on some other variables, and the "80% red, 20% green" was only the average on different users. 
+In this case, such a reasoning would certainly not work any more and could lead to totally wrong conclusions, as for example in the case of [Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)
 
 ### An unbiased estimator
 
@@ -88,11 +89,11 @@ We will name this ratio the 'importance weight' and note it $w$:
 
 <script type="math/tex; mode=display"> w_i := w(a_i,x_i) := \frac{ \pi_{test}(x_i,a_i) }{ \pi_0(x_i,a_i) } </script>
 
-In the general case of course, the users may be all different, and the policy $\pi_0$ can depend on the user. Why don't we suffer from a Simpson's like paradox?
+In the general case of course, the users may be all different, and the policy $\pi_0$ can depend on the user. How can it be unbiased in those conditions ? 
 To understand that, let's first note that if we decrease the number of users in the previous experiment, we get (of course) a worse estimator because the variance increases, but it still remains unbiased.
 In particular, it is unbiased even when there is a single user!
  
-So in the general case, we get on each user an unbiased (but high variance) estimator of what would happen when using test policy for this user. By summing those estimators on all users, it is still unbiased (for the population of users), and the relative variance (hopefully, more on that later) goes down. 
+So in the general case, we get on each user an unbiased (but very high variance) estimator of what would happen when using test policy for this user. By summing those estimators on all users, it is still unbiased (for the population of users), and the relative variance (hopefully, more on that later) goes down. 
 
 ### Proof of unbiasedness
 
@@ -107,7 +108,7 @@ It is the expectation of the outcome of the following random experiment:
 - draw an action $A$ following the policy $\pi_{test}(x)$. 
 - draw a sample of the reward  $R$ for this (state, action), and return its value.
 
-Using the chain rule we can write:
+Using the chain rule, we can write:
 <script type="math/tex; mode=display"> \mathbb{E}_{\pi_{test}}(R) = \sum_\limits{x} \mathbb{P}(X=x) \sum_\limits{a} \pi_{test}(A=a | X=x) \mathbb{E}( R | A=a , X=x ) </script>
 
 Let's emphasis what we know in this formula:
@@ -123,7 +124,7 @@ Let's then notice that the value <script type="math/tex; mode=display"> ips := \
 
 What we would like to prove now is that $IPS$ is an unbiased estimator of <script type="math/tex"> \mathbb{E}_{\pi_{test}}(R) </script>, in other words that <script type="math/tex; mode=display"> \mathbb{E}(IPS) = \mathbb{E}_{\pi_{test}}(R) </script>
 
-So let's write its expectation:
+So let us write its expectation:
 
 <script type="math/tex; mode=display"> \mathbb{E}(IPS) = \frac{1}{n} \times \sum_\limits{ i \in {1...n} } \mathbb{E} (  w(A_i,X_i) \times R_i )  </script>
 
@@ -160,7 +161,7 @@ There are several requirements to be able to compute this estimator on your data
 (Note that in our example the list of possible actions depends on the context. This is Ok, the only restriction is that $\pi_{test}$ can only use the actions from the same list)
 
 
-### It means I would have to randomize my data collection policy $\pi_0$. Should I really do that? Wouldn't it kill the performances of my system?
+### This means I would have to randomize my data collection policy $\pi_0$. Should I really do that? Wouldn't this kill the performances of my system?
 
 Randomized does not mean it should be uniformly random! It is totally Ok to have a policy assigning large probabilities to actions you assume are good, and a tiny one to 'bad' actions. 
 
@@ -168,6 +169,6 @@ And randomizing a little the policy may actually be a good idea, even if you do 
 - It will bring some diversity to the users. If you make several times a recommendation to the same user, randomizing if a very simple but efficient way to avoid showing the same user always the same crappy recommendation.
 - And it will bring diversity to the models trained on the collected dataset, enabling some exploration of new actions.
 
-## So we have an unbiased estimator. But is it low variance?
+## So we have an unbiased estimator. But what about its variance?
 
-That's a pretty good question, and unfortunately in many cases the answer is 'No'. In the next post, we will explain why, and analyze a commonly used method to limit the variance.
+That is a pretty good question, and unfortunately in many cases the variance is high. In the next post, we will explain why, and analyze a commonly used method to limit the variance.
