@@ -109,7 +109,7 @@ Compare now to this other model:
 | query 1 |   0.35   |    0.4   |    0.35  | 
 | query 2 |   0.35   |    0.4   |    0.35  | 
 
-This second model would perform worse according to RMSE than the previous one (because the values it outputs are quite far from the actual probability of a click)
+This second model would perform worse according to RMSE than the previous one (because the values it outputs are quite far from the actual probability of a click).
 However, it does correctly pick action b over action a on both queries and is therefore more useful.
 
 Let's note also that the prediction on Action C does not impact at all the RMSE (because we have no data there), while it might actually perform totally differently.
@@ -117,5 +117,5 @@ Let's note also that the prediction on Action C does not impact at all the RMSE 
   
 All that being said, fitting a model predicting $ \mathbb{P}( C =1 \| X = x ,A = a ) $ to the available data and choosing the best action according to this model can be a very strong baseline, especially when a bit of randomization is added to enforce some exploration. It is however not a great idea to select the model only based on classical supervised learning metrics.
 
-In the next post, I will describe how we can build better offline metrics for contextual bandits. More specifically, we can build a metric which under some mild assumptions can estimate "how many clicks we would get if we were using the _test_ policy". Doesn't it sounds like the perfect metric? 
+In the next post, I will describe how we can build better offline metrics for contextual bandits. More specifically, we can build a metric which under some mild assumptions can estimate "how many clicks we would get if we were using the _test_ policy". Doesn't it sound like the perfect metric? 
 
