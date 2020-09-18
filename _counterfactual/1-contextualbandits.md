@@ -53,25 +53,25 @@ A contextual bandit problem is a setting where at the time step $i$:
 ![contextual bandit dataset]({{site.repo_name}}/assets/images/reco_problem/bandit_dataset.png){:class="img-responsive"}
 
 
-If you already known about Reinforcement Learning (RL), the definition of a contextual bandit should seem familiar. Actually, the only difference with RL is that we assume here that there is no dependency between the queries (or states) at different timesteps, whereas in RL the variable $X_i$ could depend on the previous state and action $X_{i-1}$ and $A_{i-1}$ . In other words, a contextual bandit is a simplified version of RL, where "episodes" are only of length 1.
+If you already know about Reinforcement Learning (RL), the definition of a contextual bandit should seem familiar. Actually, the only difference with RL is that we assume here that there is no dependency between the queries (or states) at different timesteps, whereas in RL the variable $X_i$ could depend on the previous state and action $X_{i-1}$ and $A_{i-1}$ . In other words, a contextual bandit is a simplified version of RL, where "episodes" are only of length 1.
 
 Also note that assuming the independence between a recommendation $A_i$ and the future queries / reward is a hypothesis which is not perfectly true: in practice, we may observe the same user several times, and the recommendation we make to one user at a time $i$ may impact its query / reward when we see him again later. Making this assumption however removes many complications, so it can be worthwhile to work with it.
 
 ### Policy
 
-A _policy_ $\pi$ is the mathematical object which describe how we choose the recommendation when we know the query $x$.
+A _policy_ $\pi$ is the mathematical object which describes how we choose the recommendation when we know the query $x$.
 It can be either deterministic, in which case it can be defined by a simple mapping $ x \rightarrow a $, associating to each state $x$ the recommended action $a$.
 Or more generally it can be stochastic: at each possible state $x$, we associate a probability distribution on the set of actions.
-We thus note, for a policy $\pi$,  $\pi(a,x)$ the probability of choosing action $a$ when we are in state $x$
+We thus note, for a policy $\pi$,  $\pi(a,x)$ the probability of choosing action $a$ when we are in state $x$.
 
 
 ### Expected reward following a policy
 
 When training models on a contextual bandit problem, the goal is to find the policy which maximizes the average reward:
 
-<script type="math/tex; mode=display"> \hat{\pi} = Argmax_{ \pi } \mathbb{E}_X ( \mathbb{E}_{ A \sim \pi } ( \mathbb{E}( R | A = a , X = x ))) </script>
+<script type="math/tex; mode=display"> \hat{\pi} = Argmax_{ \pi } \mathbb{E}_X ( \mathbb{E}_{ A \sim \pi } ( \mathbb{E}( R | A = a , X = x ))) </script>.
 
-Note that the optimal policy $\hat{ \pi}$ is usually deterministic. ( In each context, just choose the action which maximize the expected reward $\mathbb{E}( R \| X=x,  A=a) $ <!-- please check my change -->
+Note that the optimal policy $\hat{ \pi}$ is usually deterministic: In each context, just choose the action which maximize the expected reward $\mathbb{E}( R \| X=x,  A=a) $.
 
 However, it is usually a good idea to avoid fully deterministic policies. One of the main reasons is that a randomized policy allows us to keep some exploration on the different actions, and this is useful to learn how to improve the policy. It is also useful to evaluate a new policy, as we will describe in the next sections.
 
@@ -80,9 +80,9 @@ However, it is usually a good idea to avoid fully deterministic policies. One of
 
 Finding the best policy could be restated as follow: 
 
-- for each query $x$, find the action $a$ which maximize $ \mathbb{P}( C =1 \| X = x ,A = a ) $
+- for each query $x$, find the action $a$ which maximizes $ \mathbb{P}( C =1 \| X = x ,A = a ) $
 
-This might look like something which could be solve by some simple supervised learning, fitting a model to predict $ \mathbb{P}( C =1 \| X = x ,A = a ) $ to the available data. So is there something more?
+This might look like something which could be solved by some simple supervised learning, fitting a model to predict $ \mathbb{P}( C =1 \| X = x ,A = a ) $ to the available data. So is there something more?
 - The first difference is that to learn the model you need to explore the different actions. If you always play the action you think is the best, you won't get data on the other actions and will never learn that they might actually be better.
 - Second difference is that the classical supervised learning losses may be very ill-adapted to evaluate the performance of a model.
 
