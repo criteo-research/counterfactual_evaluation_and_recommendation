@@ -6,7 +6,7 @@ show: false
 date: 2020-09-07
 ---
 
-> This post explains why 'importance sampling' suffers from high variance, and the consequence of the usual capping method.
+> This post explains why "importance sampling" suffers from high variance, and the consequences of the usual capping method.
 
 <!--more-->
 
@@ -15,40 +15,59 @@ date: 2020-09-07
 As a reminder from previous post, we have a counterfactual bandit dataset $(x_i, a_i, r_i)$ where:
 
 * $x_i$ are iid samples of the state X.
-* $a_i$ is a sample from $\pi_0$ on state $x_i$
-* $r_i$ is a sample of the reward when the state is $x_i$ and the action $a_i$
+* action $a_i$ is a sample from $\pi_0$ on state $x_i$
+* $r_i$ is a sample of the reward in the state $x_i$ after action $a_i$
 
 We defined:
-- the importance weight $$ W_i := w(A_i,X_i) := \frac{ \pi_{test}(X_i,A_i) }{ \pi_0(X_i,A_i) } $$
-- and the IPS estimator $$ IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } W_i \times  R_i $$
+- the importance weight $ W_i := w(A_i,X_i) := \frac{ \pi_{test}(X_i,A_i) }{ \pi_0(X_i,A_i) } $
+- and the IPS estimator $ IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } W_i \times  R_i $
  
-and proved it is an unbiased estimator of the number of clicks when applying policy $\pi_{test}$ instead of $\pi_0$
+and we proved it is an unbiased estimator of the number of clicks when applying policy $\pi_{test}$ instead of $\pi_0$.
 
 ## Variance of the importance sampling estimator
 
+To study the variance of $IPS$, we will look at the expectation and variance of $W$. Let us start with the expectation of $W$:
+
+### A useful lemma
+
+Expectation of $W$ is easy to compute:
+
+ $$ E(W) = 1 $$
+
+The proof is basically the same as the proof that <script type="math/tex">  \mathbb{E}_{\pi_{0}}(R \times W) = \mathbb{E}_{\pi_{test}}(R)  </script>.
+Here it is:
+
+$$ 
+ \begin{aligned}
+  \mathbb{E}(W)  &= \sum_\limits{a} \pi_0(a) w(a) \\\\ &= \sum_\limits{a} \pi_0(a) \frac{\pi_{test}(a)}{\pi_0(a)} \\\\ &= \sum_\limits{a} \pi_{test}(a) \\\\ &= 1 
+\end{aligned}
+$$
+
+Or we could also redefine $R$ as 1 and apply the previous result, which would then writes in this case:  <script type="math/tex">  \mathbb{E}_{\pi_{0}}(1 \times W) = \mathbb{E}_{\pi_{test}}(1) </script> , and the right term is obviously $1$.
+
+### Variance of $IPS$
+
 - $IPS$ is an average on $n$ independent samples of $W \times R$ , where we noted $W := w(A,X)$; so $Var(IPS) = \frac{1}{n} \times Var( W \times R ) $ 
-- while there is no simple formula for $Var( W \times R)$ , we may approximate it by assuming that $R$ and $w(A,X)$ are independent. (This is wrong, but should give us the correct magnitude)
+- While there is no simple formula for $Var( W \times R)$ , we may approximate it by assuming that $R$ and $W$ are independent. (This is wrong, but should give us the correct magnitude.)
 
 We can then write:
 
-\begin{aligned}
-  Var(IPS)  &= \frac{1}{n} \mathbb{E}(W²R²) - \frac{1}{n} \mathbb{E}(WR)² \\\\  &\approx \frac{1}{n} \mathbb{E}(W² ) \mathbb{E}(R²) - \frac{1}{n} \mathbb{E}(W)² \mathbb{E}(R)² \\\\           &\approx \frac{1}{n} \mathbb{E}(W² ) \mathbb{E}(R)
+$$ 
+ \begin{aligned}
+  Var(IPS) &= \frac{1}{n} \times  ( \mathbb{E}(W²R²) - \mathbb{E}(WR)² ) &\\\\
+           &\approx \frac{1}{n} \times  ( \mathbb{E}(W²)\mathbb{E}(R²) - \mathbb{E}(W)²\mathbb{E}(R)² ) & \text {assuming that W and R are independent} \\\\
+           &\approx \frac{1}{n} \times  ( \mathbb{E}(W²)\mathbb{E}(R) - \mathbb{E}(R)² ) \qquad& \text{noting that R is binary, so }R²=R \text{; and } \mathbb{E}(W)=1  \\\\
+           &\approx \frac{1}{n} \times \mathbb{E}(W²)\mathbb{E}(R)		  \qquad & \text{ because } \mathbb{E}(W²) >> \mathbb{E}(R)  
 \end{aligned}
+$$
 
-(on the last step, we used  $R=R²$ because $R$ is binary, and dropped the second term which is typically much smaller)
 
-Variance of $IPS$ is more or less proportional to $ \mathbb{E}(W²) $ . How big is this ?
+Variance of $IPS$ is more or less proportional to $\mathbb{E}(W²)$.
 
 ### Variance of the importance weight
 
-Let's note that the expectation of the importance weight is always $1$, so $ \mathbb{E}(W²) = Var(W) +1 $  
-(here is the proof: 
-$$ E(W) = \sum_\limits{a} \pi_0(a) w(a) = \sum_\limits{a} \pi_0(a) \frac{\pi_{test}(a)}{\pi_0(a)}  = \sum_\limits{a} \pi_{test}(a) = 1 $$ )
-
-
-Its variance however depends on how different $\pi_0$ and $\pi_{test}$ are.
-
-Let's look at what happen on a few examples:
+So we should study $\mathbb{E}(W²) = Var(W)+1$.
+Let's look at this term on a few examples:
 
 ![w examples]({{site.repo_name}}/assets/images/reco_problem/w_with_different_pi.png){:class="img-responsive"}
 
@@ -57,28 +76,36 @@ We can see on those examples that:
 - if $\pi_0$ and $\pi_{test}$ are very different, the weight is almost 0 with a large probability, but may take (with a low probability) some huge value. The variance is then driven by those outliers and is large.
 
 The worst case happens when $\pi_{test}$ puts all the mass on the action less likely according to $\pi_0$.
-The $w$ is then either $\frac{1}{ min_a(\pi_0(a)}$ , with probability $ min_a(\pi_0(a)$ , or 0, and the variance is   $\frac{1}{ min_a(\pi_0(a)}$ -1 $
+The weight $w$ is then either $\frac{1}{ min_a(\pi_0(a)}$ , with probability $ min_a(\pi_0(a))$ , or 0, and the variance is then $\frac{1}{ min_a(\pi_0(a)} -1 $
 
-In practice, it is difficult to avoid having any actions with very low propensity. Indeed:
- - assigning significant propensity to some actions which are known (or strongly suspected) to perform badly would degrade the whole system performances
- - when the action space is large, it is just not possible to assign a large probability to every action.
+To summarize: <b> $IPS$ Variance is high when the test policy $\pi_{test}$ assigns a significant probability to actions very unlikely under $\pi_0$. </b>
+
+The reason is intuitively clear: such actions are not explored much by $\pi_0$, and therefore what happens when they are chosen is not well known.
 
 
 ### Hidden variance
 
-When the probability of an action is very close to zero the associated weigh can grow really large, but is almost never observed. 
+There is one common pitfall when estimating the variance of $IPS$ estimator:
+Sometimes the *empirical* variance of $IPS$, on some sample, may look small, while the true variance is not.
 
-For example, let's assume that an action $a_0$ has:
-- probability $0.1$ on $\pi_{test}$ 
-- probability $10^{-10}$ on $\pi_0$
-- associated weight is then $w(a) = 10^9$
-- the other actions have reasonable weights (lets say less than 10)
-- and we collect $10^7$ samples of $A$ following $\pi_0$
+Let us indeed look at what may happen on an example where an action has a probability very close to 0 under $\pi_0$.
 
-What would we observe in such a case?
-- With a probability of about $0.01$, we would observe one sample with the action $a_0$ and the giant $10^9$ weight. In such case, we would conclude that the variance is crazily high (this single sample has more total weight than the 9999999 other! ) and that the estimator is not usable.
-- But with a high probability (around $0.99$), we won't observe the action $a_0$ at all. In such a case, the empirical variance of $w$ might look low, because we observed only some $w < 10$. It is important to realize that this is wrong! Indeed, the estimated value we get from the $ips$ is in the case underestimating the number of clicks we would get with $\pi_{test}$, because it does not account for the value we would get from playing action $a_0$.
+| Policy | Action $a_1$ | Action $a_2$ |Action $a_3$ |
+| $\pi_0$ | $10^{-10}$ | $0.5-10^{-10}$ | 0.5 |
+| $\pi_{test}$ | 0.1 | 0.4 | 0.5 |
+| w | $10^{9}$ | $ \approx 0.8$ | $1.0$ |
 
+In this example,
+$E(W²) = 10^{-10} \times (10^{9})² + 0.4999... \times 0.8² + 0.5 \times 1² \approx 10^{8}  $
+
+They key point here is that the variance is driven by some event (here observing action $a_1$) which almost never happens. 
+
+
+Let us now assume we draw a fairly large sample, say of size $10^7$, of those data, following $\pi_0$.
+Usually (well, with probability $\approx 0.999$) , this sample will not contain a single line with action $a_1$, and thus not a single large weight. 
+On this "typical" sampled dataset, 
+- the *empirical* variance would be low. It is important to note that it happens because the sample size is here too small for the *empirical* variance to estimate correctly the *true* variance. 
+- the *empirical average* of $w$ would be around $0.9$, whereas $E(W)=1$:
 This "hidden" variance is behaving like a bias!
 
 Let's also note that in the limit case, when the probability of an action following $\pi_0$ becomes exactly 0, the variance becomes low, but the estimator is now biased.
@@ -89,13 +116,13 @@ When the variance is too large, the estimator is no longer useful in practice. C
 
 Since the variance is driven by some outliers, we can lower the variance by removing those outliers. For example, removing all samples where $w$ is above a threshold, or replacing $w$ by some maximum value when the true value is higher.
 
- We can then define the capped IPS estimator:
+We can then define the capped IPS estimator:
 
 $$ capped IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \overline{W_i} \times  R_i $$
 
-with:  $ \overline{W_i} $ defined either as:
+where the _capped_ weight $ \overline{W_i} $ may be defined either as:
  -  $ \overline{W_i} := min( W_i , c ) $     (capped weight)
- -  or $ \overline{W_i} :=  W_i \times \mathbb{1}_{ W_i < c  } $    (filtering out large weights)
+ -  or $ \overline{W_i} :=  W_i \times \mathbb{1}_{ W_i < c  } $  (filtering out large weights)
 
 and $c$ is the capping threshold.
 
@@ -115,12 +142,22 @@ To summarize:
 
 Ideally, we would like a low variance unbiased estimator for all policies. But is this possible?
 
+#### Capping or filtering ?
+
+In theory, capping is a slightly better bias-variance tradeoff, and should therefore be chosen.
+In practice, it made little difference on the dataset I observed. 
+"Filtering" is also easier to reason with, and in next post we will use it to get some intuitions on some methods to mitigate the bias.
 
 ### No unbiased low variance estimator when $\pi_{test}$ is far from $\pi_0$
 
 Unfortunately, the answer is No, unless we make some additional hypothesis.
 
 Indeed, having some large importance weights means that the test policy takes some actions which were very uncommon under the logging policy.  We just did not collect enough data on those actions to get any low variance estimate of what would happen when they are chosen.
+
+The only way to ensure that the reward under any policy $\pi_{test}$ may be estimated with a low variance would be to ensure that all actions have a high enough probability under $\pi_0$. But this is certainly not realistic:
+ - assigning significant propensity to some actions which are known (or strongly suspected) to perform badly would degrade the whole system performances.
+ - when the action space is large, it is just not possible to assign a large probability to every action.
+
 
 In the next post, we will propose some possible additional hypothesis which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$ (well, still not *too* far, there is just no magic for that)
 
