@@ -20,7 +20,7 @@ As a reminder from previous post, we have a counterfactual bandit dataset $(x_i,
 
 We defined:
 - the importance weight $ W_i := w(A_i,X_i) := \frac{ \pi_{test}(X_i,A_i) }{ \pi_0(X_i,A_i) } $
-- and the IPS estimator $ IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } W_i \times  R_i $
+- and the $IPS$ estimator $ IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } W_i \times  R_i $
  
 and we proved it is an unbiased estimator of the number of clicks when applying policy $\pi_{test}$ instead of $\pi_0$.
 
@@ -55,7 +55,7 @@ We can then write:
 $$ 
  \begin{aligned}
   Var(IPS) &= \frac{1}{n} \times  ( \mathbb{E}(W²R²) - \mathbb{E}(WR)² ) &\\\\
-           &\approx \frac{1}{n} \times  ( \mathbb{E}(W²)\mathbb{E}(R²) - \mathbb{E}(W)²\mathbb{E}(R)² ) & \text {assuming that W and R are independent} \\\\
+           &\approx \frac{1}{n} \times  ( \mathbb{E}(W²)\mathbb{E}(R²) - \mathbb{E}(W)²\mathbb{E}(R)² ) & \text {assuming that } W \text{ and } R \text { are independent} \\\\
            &\approx \frac{1}{n} \times  ( \mathbb{E}(W²)\mathbb{E}(R) - \mathbb{E}(R)² ) \qquad& \text{noting that R is binary, so }R²=R \text{; and } \mathbb{E}(W)=1  \\\\
            &\approx \frac{1}{n} \times \mathbb{E}(W²)\mathbb{E}(R)		  \qquad & \text{ because } \mathbb{E}(W²) >> \mathbb{E}(R)  
 \end{aligned}
@@ -76,9 +76,9 @@ We can see on those examples that:
 - if $\pi_0$ and $\pi_{test}$ are very different, the weight is almost 0 on most samples collected from $\pi_0$, but may take (with a low probability) some huge value. The variance is then driven by those outliers and is large.
 
 The worst case happens when $\pi_{test}$ puts all the mass on the action less likely according to $\pi_0$.
-The weight $w$ is then either $\frac{1}{ min_a(\pi_0(a))}$ , with probability $ min_a(\pi_0(a))$ , or 0, and the variance is then $\frac{1}{ min_a(\pi_0(a))} -1 $
+The weight $w$ is then either $\frac{1}{ min_a(\pi_0(a))}$ , with probability $ min_a(\pi_0(a))$ , or 0, and the variance is then $\frac{1}{ min_a(\pi_0(a))} -1 $.
 
-To summarize: <b> $IPS$ Variance is high when the test policy $\pi_{test}$ assigns a significant probability to actions very unlikely under $\pi_0$. </b>
+To summarize: <b> $IPS$ variance is high when the test policy $\pi_{test}$ assigns a significant probability to actions very unlikely under $\pi_0$. </b>
 
 The reason is intuitively clear: such actions are not explored much by $\pi_0$, and therefore what happens when they are chosen is not well known.
 
@@ -86,7 +86,7 @@ The reason is intuitively clear: such actions are not explored much by $\pi_0$, 
 ### Hidden variance
 
 There is one common pitfall when estimating the variance of $IPS$ estimator:
-Sometimes the *empirical* variance of $IPS$, on some sample, may look small, while the true variance is not.
+sometimes the *empirical* variance of $IPS$, on some sample, may look small, while the true variance is not.
 
 Let us indeed look at what may happen on an example where an action has a probability very close to 0 under $\pi_0$.
 
@@ -96,17 +96,17 @@ Let us indeed look at what may happen on an example where an action has a probab
 | w | $10^{9}$ | $ \approx 0.8$ | $1.0$ |
 
 In this example,
-$E(W²) = 10^{-10} \times (10^{9})² + 0.4999... \times 0.8² + 0.5 \times 1² \approx 10^{8}  $
+$E(W²) = 10^{-10} \times (10^{9})² + 0.4999... \times 0.8² + 0.5 \times 1² \approx 10^{8}  $.
 
-They key point here is that the variance is driven by some event (here observing action $a_1$) which almost never happens. 
+The key point here is that the variance is driven by some event (here observing action $a_1$) which almost never happens. 
 
 
 Let us now assume we draw a fairly large sample, say of size $10^7$, of those data, following $\pi_0$.
-Usually (well, with probability $\approx 0.999$) , this sample will not contain a single line with action $a_1$, and thus not a single large weight. 
+Usually (well, with probability $\approx 0.999$), this sample will not contain a single line with action $a_1$, and thus not a single large weight. 
 On this "typical" sampled dataset, 
 - the *empirical* variance would be low. It is important to note that it happens because the sample size is here too small for the *empirical* variance to estimate correctly the *true* variance. 
 - the *empirical average* of $w$ would be around $0.9$, whereas $E(W)=1$:
-This "hidden" variance is behaving like a bias!
+this "hidden" variance is behaving like a bias!
 
 Let's also note that in the limit case, when the probability of an action following $\pi_0$ becomes exactly 0, the variance becomes low, but the estimator is now biased.
 
@@ -116,7 +116,7 @@ When the variance is too large, the estimator is no longer useful in practice. C
 
 Since the variance is driven by some outliers, we can lower the variance by removing those outliers. For example, removing all samples where $w$ is above a threshold, or replacing $w$ by some maximum value when the true value is higher.
 
-We can then define the capped IPS estimator:
+We can then define the capped $IPS$ estimator:
 
 $$ capped IPS := \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \overline{W_i} \times  R_i $$
 
@@ -128,8 +128,8 @@ and $c$ is the capping threshold.
 
 By choosing the capping threshold $c$ low enough (typically somewhere between 10 and 1000, depending on how much variance you are ready to accept), it is possible to get a variance low enough to use this estimator.
 
-... but of course, the capped estimator is no longer unbiased. Choice of the capping threshold $c$ is therefore a [bias-variance tradeoff](https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff)
- Instead, since $\overline W \leq W $ (and $R \geq 0$ ), the capped IPS underestimate the outcome of the tested policy.
+... but of course, the capped estimator is no longer unbiased. Choice of the capping threshold $c$ is therefore a [bias-variance tradeoff](https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff).
+ Instead, since $\overline W \leq W $ (and $R \geq 0$ ), the capped $IPS$ underestimate the outcome of the tested policy.
 This underestimation is all the more important when:
  - capping threshold $c$ is smaller
  - $\pi_{test}$ is further from $\pi_0$
@@ -137,8 +137,8 @@ This underestimation is all the more important when:
 To summarize:
 
 |            | $\pi_{test}$ not far from $\pi_0$  | $\pi_{test}$ far from $\pi_0$ |
-| IPS        |  unbiased & low variance | unbiased, <span style="color:red">High variance</span>
-| capped IPS | slightly biased, very low variance | <span style="color:red">Biased</span>, low variance
+| $IPS$        |  unbiased & low variance | unbiased, <span style="color:red">high variance</span>
+| capped $IPS$ | slightly biased, very low variance | <span style="color:red">biased</span>, low variance
 
 #### Capping or filtering ?
 
@@ -149,7 +149,7 @@ In practice, it made little difference on the dataset I observed.
 ### No unbiased low variance estimator when $\pi_{test}$ is far from $\pi_0$
 
 Ideally, we would like a low variance unbiased estimator for all policies. But is this possible?
-Unfortunately, the answer is No, unless we make some additional hypothesis.
+The answer is unfortunately No, unless we make some additional hypotheses.
 
 Indeed, having some large importance weights means that the test policy takes some actions which were very uncommon under the logging policy.  We just did not collect enough data on those actions to get any low variance estimate of what would happen when they are chosen.
 
@@ -158,5 +158,5 @@ The only way to ensure that the reward under any policy $\pi_{test}$ may be esti
  - when the action space is large, it is just not possible to assign a large probability to every action.
 
 
-In the next post, we will propose some additional hypothesis which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$ (well, not *too* far either, there is just no magic for that)
+In the next post, we will propose some additional hypotheses which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$. (Well, not *too* far either, there is just no magic for that! )
 
