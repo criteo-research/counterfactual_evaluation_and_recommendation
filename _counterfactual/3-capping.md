@@ -73,10 +73,10 @@ Let's look at this term on a few examples:
 
 We can see on those examples that:
 - when $\pi_0$ is close to $\pi_{test}$ , the ratio  $\frac{\pi_{test}(a)}{\pi_0(a)}$  is always close from 1, and variance is low.
-- if $\pi_0$ and $\pi_{test}$ are very different, the weight is almost 0 on most samples collected from $\pi_0$, but may take (with a low probability) some huge value. The variance is then driven by those outliers and is large.
+- if $\pi_0$ and $\pi_{test}$ are very different, the weight is almost 0 with a large probability, but may take (with a low probability) some huge value. The variance is then driven by those outliers and is large.
 
 The worst case happens when $\pi_{test}$ puts all the mass on the action less likely according to $\pi_0$.
-The weight $w$ is then either $\frac{1}{ min_a(\pi_0(a))}$ , with probability $ min_a(\pi_0(a))$ , or 0, and the variance is then $\frac{1}{ min_a(\pi_0(a))} -1 $
+The weight $w$ is then either $\frac{1}{ min_a(\pi_0(a)}$ , with probability $ min_a(\pi_0(a))$ , or 0, and the variance is then $\frac{1}{ min_a(\pi_0(a)} -1 $
 
 To summarize: <b> $IPS$ Variance is high when the test policy $\pi_{test}$ assigns a significant probability to actions very unlikely under $\pi_0$. </b>
 
@@ -132,7 +132,7 @@ By choosing the capping threshold $c$ low enough (typically somewhere between 10
  Instead, since $\overline W \leq W $ (and $R \geq 0$ ), the capped IPS underestimate the outcome of the tested policy.
 This underestimation is all the more important when:
  - capping threshold $c$ is smaller
- - $\pi_{test}$ is further from $\pi_0$
+ - $\pi_{test} is further from \pi_0$
  
 To summarize:
 
@@ -140,15 +140,16 @@ To summarize:
 | IPS        |  unbiased & low variance | unbiased, <span style="color:red">High variance</span>
 | capped IPS | slightly biased, very low variance | <span style="color:red">Biased</span>, low variance
 
+Ideally, we would like a low variance unbiased estimator for all policies. But is this possible?
+
 #### Capping or filtering ?
 
 In theory, capping is a slightly better bias-variance tradeoff, and should therefore be chosen.
 In practice, it made little difference on the dataset I observed. 
-"Filtering" is also easier to reason with, and in next post we will use it to get some intuitions on some methods to mitigate the bias. (We will also explain how to generalize those reasonings to "capping")
+"Filtering" is also easier to reason with, and in next post we will use it to get some intuitions on some methods to mitigate the bias.
 
 ### No unbiased low variance estimator when $\pi_{test}$ is far from $\pi_0$
 
-Ideally, we would like a low variance unbiased estimator for all policies. But is this possible?
 Unfortunately, the answer is No, unless we make some additional hypothesis.
 
 Indeed, having some large importance weights means that the test policy takes some actions which were very uncommon under the logging policy.  We just did not collect enough data on those actions to get any low variance estimate of what would happen when they are chosen.
@@ -158,5 +159,5 @@ The only way to ensure that the reward under any policy $\pi_{test}$ may be esti
  - when the action space is large, it is just not possible to assign a large probability to every action.
 
 
-In the next post, we will propose some additional hypothesis which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$ (well, not *too* far either, there is just no magic for that)
+In the next post, we will propose some possible additional hypothesis which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$ (well, still not *too* far, there is just no magic for that)
 
