@@ -6,28 +6,33 @@ show: false
 date: 2020-09-07
 ---
 
-> In this post, we will propose some idea to build a low variance estimator with an "acceptable" bias,
-and introduce the "pointwise capped normalized" estimator defined in [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030) and some possible variants.
-
+> This post will describe some ideas to build a low variance estimator with an "acceptable" bias, and detail a variant of the estimator we found useful at Criteo.
+Its content is closely related to what I published with my co-authors on [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030), but I tried here to put more focus on the underlying intuitions.
 <!--more-->
 
 In the previous post:
-- we defined the capped importance sampling estimator
-- we explained that capping trades some variance for a bias
+- we defined the capped importance sampling estimator.
+- we explained that capping trades some variance for a bias.
 - we concluded that when $\pi_{test}$ is too far from $\pi_0$, there is no way to build a low variance unbiased estimator, because we just did not collect enough samples of what happens after the actions favored by $\pi_{test}$.
+
+To quickly remind our notations, we have a counterfactual bandit dataset $(x_i, a_i, r_i)$ where:
+* $x_i$ are iid samples of the state X.
+* action $a_i$ is a sample from $\pi_0$ on state $x_i$
+* $r_i$ is a sample of the reward in the state $x_i$ after action $a_i$
+* the importance weight is $w(a,x) := \frac{ \pi_{test}(a,x)}{ \pi_{0}(a,x)} $ 
 
 
 # Two ideas to go further
 
 We observed that we cannot get a low variance unbiased estimator for what happens when applying $\pi_{test}$, because we do not have enough data on some of the actions it selects. So what we do ? We would like to propose two viewpoints here:
- - we can make a hypothesis on the average reward of those unobserved actions
- - or we can replace $\pi_{test}$ by an approximate policy $\pi_{test'}$ which should be as similar to $\pi_{test}$ as possible while staying close enough from $\pi_0$ to keep low importance weights.
+ - We could make a hypothesis on the average reward of those unobserved actions.
+ - Or we could replace $\pi_{test}$ by an approximate policy $\pi_{test'}$ which should be as similar to $\pi_{test}$ as possible, while staying close enough from $\pi_0$ to keep low importance weights.
  
 Interestingly enough, both ideas may lead to the same estimator.
 
 ## An example
 
-Before jumping into the equations, let's first look at a simple example to show how we can apply those ideas.
+Before jumping into the equations, let's look at how those ideas could unfold in a simple example.
 
 |              | Action $a_1$ | Action $a_2$ | Action $a_3$|
 | $\pi_0$      | 0.8 | 0.2 | 0.00000001 |
@@ -38,11 +43,12 @@ Before jumping into the equations, let's first look at a simple example to show 
 
 The action $a_3$ clearly would make the variance too high.
 Instead of capping we could:
-- make a hypothesis one the average reward of action $a_3$. Looking at the other actions, maybe a reasonable guess would be around $0.05$ ?
-- or we could define a policy $\pi_{test'}$ which looks like $\pi_{test}$  but avoids the action $a_3$
+- Make a hypothesis one the average reward of action $a_3$. Looking at the other actions, maybe a reasonable guess would be around $0.05$ ?
+- Or we could define a policy $\pi_{test'}$ which looks like $\pi_{test}$  but avoids the action $a_3$, like this one:
 
 |              | Action $a_1$ | Action $a_2$ | Action $a_3$|
 |$\pi_{test'}$  | 0.11 | 0.89 | 0 |
+| $w'$  | 0.1375 | 4.45 | 0 |
 
 We can think of $\pi_{test'}$ as an approximation of $\pi_{test}$, and compute an (unbiased ! ) estimation of what would happen if we were using $\pi_{test'}$
 
@@ -53,95 +59,141 @@ We will now formalize a bit more what we did in those examples.
 
 ### Approximating unexplored actions by 0
 
-As already explained, high variance of the $IPS$ is caused by actions with a large associated weight $w(a)$
+As already explained, high variance of the $IPS$ is caused by actions with a large associated weight $w(a)$.
 
-But let's assume for a moment that the reward $R(a)$ on those actions (let's say those with $w \geq 100$) is always 0. In this case, the ips would become:
 
-$$IPS = \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } {W_i} \times 1_{ W_i < 100 }  \times  R_i  +  $$
+But let's assume for a moment that the reward $R(a)$ on those actions (let's say those with $w \geq 100$) is always 0. In this case, the $ips$ would become:
 
-What we recognize here is exactly the capped $IPS$ estimator, where we dropped all the samples with $w_i > 100$.
+$$IPS = \frac{1}{n} \times  \sum_\limits{ i \in {1...n} } {W_i} \times 1_{ W_i < 100 }  \times  R_i  $$
 
-_Using the capped estimator is therefore equivalent to approximating the reward of the capped actions by 0._
+What we recognize here is exactly the filtered $IPS$ estimator, where we dropped all the samples with $w_i > 100$.
+
+_Using the filtered estimator is therefore equivalent to approximating the reward of the filtered actions by 0_.
 
 ### Using some other approximation
 
-Now, let's assume instead that we would like to approximate average reward of the same actions (still those with $w>100$) not by 0 but by some function $f(x,a)$ instead.
+Now, let's assume instead that we would like to approximate average reward of the "filtered" actions (still those with $w>100$) not by 0 but by some function $f(x,a)$ instead.
 
 We can decompose expected reward under $\pi_{test}$ as:
-- expected reward from playing non capped actions. This is the part estimated by capped $IPS$
-- plus expected reward from playing capped actions, $\sum_\limits{a \| w(a,x) > 100   } \pi_{test}(a,x) f(a,x) )$
+- the expected reward from playing non filtered actions. This is the part estimated by filtered $IPS$.
+- plus the expected reward from playing filtered actions.
 
-We can then correct the capped $IPS$ by adding this additional term:
+This second part can be written explicitly as :
 
-$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } ( W_i \times 1_{ W_i < 100 }  \times  R_i  + \sum_\limits{a \| w(a,x) > 100   } \pi_{test}(a,x_i) f(a,x_i) ) $$
+ $$\sum_\limits{a  } \pi_{test}(a,x) \times 1_{ W_i > 100 } \times  \mathbb{E}(R | A=a, X=x) $$
 
-Let's see now some possible hypothesis we could use.
 
-### Approximating reward on unexplored action by the average reward on other actions
+The trick here is to notice that, since our hypothesis gives us the expected reward of those actions, we do not need importance weighting to estimate this second. According to our hypothesis, it should be equal to:
+
+ $$\sum_\limits{a | w(a,x) > 100   } \pi_{test}(a,x) f(a,x) $$
+
+We can then correct the filtered $IPS$ by adding this additional term:
+
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \left( w_i \times 1_{ w_i < 100 }  \times  r_i  + \sum_\limits{a | w(a,x_i) > 100   } \pi_{test}(a,x_i) f(a,x_i) \right) $$
+
+Let's see now how we could choose the function 'f'
+
+### Approximating reward on filtered actions with a model
+
+The most obvious solution here is to build some model $f(a,x)$ predicting the reward on context $x$ after action $a$.
+The formula above then becomes (well, almost) what is known as the "doubly robust" estimator.
+
+( To be more precise, the "doubly robust" estimator would be usually defined as follow: 
+
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \left( w_i \times 1_{ w_i < 100 }  \times  (r_i - f(a_i,x_i) + \sum_\limits{a } \pi_{test}(a,x_i) f(a,x_i) \right) $$
+
+It may be checked that this formula as the same expectation as the formula above, and that both usually have similar variances. )
+
+While the doubly robust may be a very good choice of estimator, it requires to have a model of the reward, which may make it a bit more complicate to compute. On top of that, we want here to evaluate one policy $\pi_{test}(a,x)$ which may typically rely on another model itself. So we are using a model of the reward to evaluate another model of the reward, which is not really satisfying. 
+For those reasons, we would like to propose different hypotheses on the reward after a filtered action.
+
+### Approximating reward on filtered action by the average reward on other actions
 
 In a recommender system, the set of actions proposed in a context $x$ typically comes from several heuristics (collaborative filtering, bestofs,...) which are tuned to provide at least 'reasonable' actions.
 As a result, the expected reward $\mathbb{E}(R |X=x,A=a)$ in a context $x$ after action $a$ does not vary that much with $a$. 
-On the other hand, it may vary by several orders of magnitude with context $x$. So we might write, for the less explored actions: $\mathbb{E}(R(x,a)) \approx \mathbb{E}(R(x))  $. \\
+On the other hand, it may vary by several orders of magnitude with context $x$. So we might write, for the less explored actions: $\mathbb{E}(R\| X=x,A=a)) \approx \mathbb{E}(R\|X=x)  $.
 
-Since the reward $R$ is not exactly the same for each action, we need to be a bit more specific here: To define $\mathbb{E}(R(x))$, we need to specify which policy is used to collect the actions. We propose two variations:
+Since the reward $R$ is not exactly the same for each action, we need to be a bit more specific here: To define $\mathbb{E}(R\| X=x)$, we need to specify which policy is used to collect the actions.
+The easiest here is to choose the policy $\pi_0$:
+- Approximate $\mathbb{E}(R \| X=x, A= a_{filtered}))$ by the expected reward using $\pi_0$
 
-- Approximate $\mathbb{E}(R(x,a_{unexplored}))$ by the expected reward using $\pi_0$
-- Approximate $\mathbb{E}(R(x,a_{unexplored}))$ by the expected reward on the explored actions chosen by $\pi_{test}$
+### Approximating reward on filtered action by the average reward from $\pi_0$
 
-We will detail the first option in section 3. Here we focus on the second option and explain how it lead to the "pointwise capped normalized estimator".\\
-But let's first formalize it:
+We therefore propose here to use:
 
-We would need to approximate the expected reward of an action when it is not explored enough by $\pi_0$, but happens more often with $\pi_{test}$. Those are exactly the actions where the importance weight $w$ is higher than the chosen threshold $c$. \\
-So we propose to approximate, for any context $x$:
-  $\mathbb{E}\_{ \pi_{test}} ( R(A,x) \| W > c ) $ by $\mathbb{E}\_{\pi_{test} }( R(A,x) \| W \leq c ) $
+$$ f(x,a) := \mathbb{E}_{\pi_0}( R | X = x) $$
 
+as an approximation of $ \mathbb{E}(R\|X=x ,A=a) $ when $a$ is a filtered action.
 
-Let's see how we can use this assumption to build our estimator:
-\begin{aligned}
-\mathbb{E}\_{ \pi_{test} }( R(A,x) ) &= \mathbb{E}\_{ \pi_{test} }( R(A,x) \| W(A,x) > c ) P\_{ \pi_{test} }(  W(A,x) > c ) + \mathbb{E}\_{ \pi_{test} }( R(A,x) \| W(A,x) \leq c )P\_{ \pi_{test} }( W(A,x) \leq c )  \\\\   &\approx \mathbb{E}\_{ \pi_{test} }( R(A,x) \| W(A,x) \leq c ) \\\\  &\approx \mathbb{E}\_{ \pi_{test} }( R(A,x) \times( \mathbf{1}\_{ W(A,x) \leq c} ))  \frac{1}{ P\_{ \pi_{test} }(  W(A,x) \leq c )} 
-\end{aligned}
+Following the previous section, our estimator should be:
 
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \left( w_i \times 1_{ w_i < 100 }  \times  r_i  + \sum_\limits{a | w(a,x_i) > 100   } \pi_{test}(a,x_i) \times \mathbb{E}_{\pi_0}( R | X = x_i) \right) $$
 
+Here we note that $\mathbb{E}_{\pi_0}( R \| X = x_i) )$ is not known, but we have a sample of it: this sample is $r_i$!
 
-The factor $\frac{1}{ P_{ A \sim \pi_{test} }(  W > c )}$ can be either computed explicitly, or estimated with a Monte Carlo method if the action space is too large (With some unbiased estimator of the inverse, such as  [this](https://en.wikipedia.org/wiki/Ratio_estimator#Midzuno-Sen's_method). ) See also [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030) for more details) 
-
-The estimator we get is then:
-
- $$ \frac {1}{n} \sum_\limits{i} w_i \times r_i \times \mathbf{1}_{w_i \leq c} \times \frac{1}{ P_{ A \sim \pi_{test} }(  W > c | X=x_i )}$$
-
+Estimator becomes:
  
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } ( w_i \times 1_{ w_i < 100 } + \mathbb{P}_{ a \sim \pi_{test} } ( w(a,x_i) > 100  ) )   \times  r_i  $$
+
+where we noted :
+
+$$ \mathbb{P}_{ a \sim \pi_{test} } ( w(a,x_i) > 100  ) :=  \sum_\limits{a | w(a,x) > 100 } \pi_{test}(a,x_i)  $$
+
+This term may also be problematic to compute explicitly, because the sum may be on a very large number of actions.
+But once again, we can sample to estimate it. To do that, we just need to draw one action $a_i'$ from the test policy, and check if this action is filtered.
+
+The final estimator is thus computed as follow:
+- On each line of log, draw $a_i' \sim \pi_{test}(x_i)$
+- Compute: 
+
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } ( w_i \times 1_{ w_i < 100 }  + 1_{ w(a_i',x_i) > 100 } )  \times  r_i   $$
+
+
+#### An Additive correction
+The weights of this estimator are thus:
+
+$$  w(a_i,x_i) \times 1_{w(a_i,x_i) < 100} +  + \mathbb{P}_{ a \sim \pi_{test} } ( w(a,x_i) > 100  )$$
+
+It is straightforward to check that those weight have an expectation of $1$.
+One way to think to this estimator is that we added  constant to the filtered weights to get back the property $E(W=1$ that we lost with capping.
+
+#### An estimator of a modified policy
+
+It can be verified that this is an unbiased estimator or the following policy:
+
+ - sample one action $a$ using $\pi_{test}$
+ - compute the importance weight $w(a) := \frac{\pi_{test}(a)}{\pi_p(a)} $
+ - if $w(a) \leq c $ return $a$
+ - else return a sample from $\pi_0$
+ 
+"Draw an action from $\pi_{test}$, if it is filtered reject it and replace it with one sample of $\pi_0$ instead".
+
 ### Using the few datapoints we have for less explored actions 
 
-In the previous section, we considered that actions are either 'explored' or 'unexplored'. Obviously, reality is not binary, and even if we do not have collected enough datapoints to estimate accurately the expected reward of the actions where $w > c$, we may still have a few. How do we use those ? \\
-This question is actually closely linked to the choice of how to deal with high weights in the capped estimator, where there are typically two options:
- - Discard the lines with high weights, effectively setting the weight to 0, and not using those data at all.
- - Or cap the importance weight, replacing $w$ by $min(x,c)$. This method allows to use reward observed on datapoints where $w>c$, it just does not rely on it too much.  
+In the previous section, we did not use at all the observed reward $r_i$ on the samples where the action $a_i$ is "filtered", that is $w_i > 100$.
+We have seen in last post a usually better strategy is capping large importance weights, instead of filtering them.
+But how can we use an hypothesis on the reward on "less explored action" when using the capped estimator ?
 
-Can we do something similar when applying our approximation? The answer is yes. To do that, we need a finer definition of the event 'the action is not explored enough'. We propose the following definition:
+The solution here is to realize that capping is equivalent (at least in expectation) to _randomly_ filtering large weights.
 
-Let $U$ an uniform random variable in interval $[0;1]$, independent from anything else. We will say that the action $A$ is 'unexplored' if $w(A) > c \times U $. \\
-This definition is motivated by the following equality:
+More precisely, the capped weight $ min(w_i,100) $ is the expectation of the random variable constructed as follow:
+- Sample $U$, an uniform random variable in interval $[0;1]$
+- if $ w_i *U > 100 $ , return 0  (_the weight is filted_)
+- else return $w_i$
 
-$$ \mathbb{E}( r_i \times min(w_i,c) ) = \mathbb{E}_{U, A \sim \pi_{test} }( R(A,x) \times( \mathbf{1}_{ W(A,x) > c \times U} ))$$ 
-In other words, the capped estimator is (in expectation) what we get when we remove the 'unexplored' actions according to this precise definition.
+The probability that an action $a$ is filtered with this definition is then:
 
-We can now rewrite our hypothesis: 
+$$ \mathbb{P} \left( w(a,x) \times U > 100 \right) = 1 - \frac{ min(w(x,a),100) }{ w(x,a) }  $$
+ 
+We can now rewrite our corrected estimator, by using the approximation $f(x,a)$ when the action is filtered:
 
-We will approximate $$\mathbb{E}_{ \pi_{test} }( R(A,x) | W > c \times U )$$ by $\mathbb{E}\_{ \pi_{test} }( R(A,x) \| W \leq c \times U )$. \\
-The computation unfolds in the same way as above:
-$$\mathbb{E}_{ \pi_{test} }( R(A,x) ) 
-\approx
-\mathbb{E}_{ \pi_{test} }( R(A,x) \times( \mathbf{1}_{ W > c \times U} ))  \frac{1}{ P_{ A \sim \pi_{test} }(  W > c \times U | X=x )} $$
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } \left( min(w_i,100)  \times  r_i  + \sum_\limits{a  } \pi_{test}(a,x_i) \times (1 - \frac{ min(w(x_i,a),100) }{ w(x_i,a) }) \times f(a,x_i) \right) $$
 
-We can notice here that $$ P_{ A \sim \pi_{test} }(  W > c \times U | X= x ) = \mathbb{E}_{\pi_{test}}( \frac{ min(W,c) }{W} | X=x ) = \mathbb{E}_{\pi_{0}} ( min(W,c) | X=x )  $$
-and this quantity can also be either computed explicitly or estimated by Monte Carlo.
-The estimator we get is thus:
+In the case when we choose, as in previous paragraph, $f(x,a) := \mathbb{E}(R\|X=x)$, we finally get the following program: 
+- On each line of log, draw $a_i' \sim \pi_{test}(x_i)$
+- Compute: 
 
- $$ \frac {1}{n} \sum_\limits{i} min( w_i , c ) \times \frac{1}{  \mathbb{E}_{\pi_{0}} (min(W_i,c)| X=x_i ) }$$
-
-This is exactly the "pointwise normalized capped estimator" proposed in section 5.4 of [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030).
-
-Note that there is actually still a possible problem in practice: $$\mathbb{E}_{\pi_{0}} (min(W_i,c)| X=x_i )$$ may sometimes become very low, leading to a large variance. This can be solved by lowering the capping threshold $c$.
+$$\frac{1}{n} \times  \sum_\limits{ i \in {1...n} } ( min( w_i , 100)  + 1 - \frac{ min(w(x_i,a_i'),100) }{ w(x_i,a_i') }  )  \times  r_i   $$
 
 
 ## Estimator of the reward under an approximation of test policy
@@ -160,22 +212,29 @@ $$ \forall x,a \quad  \frac{  \pi_{test}'(x,a) } { \pi_0(x,a)} \leq c $$
 In other words, we would like to choose the policy $\pi_{test}'$ so that it does not require capping. Let $\mathcal{B}( \pi_0 , c )$ the set of policies verifying this condition. We can think of $B( \pi_0 , c )$ as a ball around $\pi_0$ in the space of policies.
 
 Now, we want to find $\pi_{test}'$ "as close as possible" from $\pi_{test}$ among acceptable policies (ie in the set $\mathcal{B}( \pi_p , c )$). Measuring the "distance" between policies with the KL divergence, we can now define:
+
 $$ \pi_{test}' := Argmin_{ \pi \in \mathcal{B}( \pi_0 , c ) } KL(\pi_{test} || \pi )  $$
 
 For a fixed $x$, this write:
+
 $$ \pi_{test}' = Argmin_{\pi}  ( \sum\limits_{a} \pi_{test}(a) log( \pi(a) )   ) \quad under \quad \sum\limits_{a} \pi(a) = 1 \quad and \quad \forall a \quad \pi(a) \leq c \times \pi_p(a) $$
 
 Using the Lagrange multiplier, it is straightforward to check that this solution verifies:
+
 $$ \exists \alpha \quad \forall a \quad either \quad \pi_{test}'(a) = c \times \pi_p(a) \quad or \quad \pi_{test}'(a) = \alpha \times \pi_{test}(a)  $$
 
 
 Now let's define $c' := \frac{c}{ \alpha} $
- $$ \pi_{test}'(a) =  \alpha \times min( c' \pi_0(a) , \pi_{test}(a) ) $$. So the importance weights for $\pi_{test}'$ can be found by capping at $c'$ and normalizing by multiplying by $\alpha$. It is left as an exercise to check that the estimator we build in the previous section, when we lower the capping value to $c'$, is exactly the unbiased $IPS$ estimator for the reward of $\pi_{test'}$ 
- 
+
+ $$ \pi_{test}'(a) =  \alpha \times min( c' \pi_0(a) , \pi_{test}(a) ) $$
+
+and thus:
+
+ $$ \frac{\pi_{test}'(a)}{ \pi_0(a) } =  \alpha \times min( c' , w(a) ) $$
+
+The importance weights for $\pi_{test}'$ can be found by capping at $c'$ and normalizing  by multiplying by $\alpha$ to retrieve an importance weight of expectation $1$: here we applied a multiplicative correction to the importance weight.
 
 #### Describing the policy $\pi_{test}'$
-We explained that the "pointwise capped normalized" estimator is actually the unbiased importance weighting estimator for a policy $\pi_{test'}$. Let's describe explicitly this policy.
-
 
 A sample of the approximate policy $\pi_{test}'$ can be obtain as follow:
   - sample one action $a$ using $\pi_{test}$
@@ -184,59 +243,14 @@ A sample of the approximate policy $\pi_{test}'$ can be obtain as follow:
   - if $w(a) \times u  \leq c $ return $a$
   - else reject the sample and repeat all those steps
 
-Note that if $w(a) \leq c $ the sample is always accepted. This algorithm could be roughly described as "Sample from $\pi_{test}$ until you find an action not capped under $\pi_0$"
+Note that if $w(a) \leq c $ the sample is always accepted. This algorithm could be roughly described as "Sample from $\pi_{test}$ until you find an action not capped under $\pi_0$".
 
-## Additive correction
+Actually, it may be checked that this is equivalent to approximate (with the methods from previous section) the expected reward on "filtered actions" by the expected reward from non filtered actions from $\pi_{test}$; or more formally:
 
-The "pointwise capped normalized" estimator corrects the capped importance weight by a constant factor to ensure that the expectation of the importance weight is 1. What if instead of a multiplicative factor, we used an additive correction?
-We can therefore define the "additive corrected capped normalized" estimator as follow:
-
-$$ \sum\limits_i r_i \times ( min( c, w(a_i,xi) ) + 1 - \mathbb{E}_{a \sim \pi_p}  min( c, w(a,xi) )  ) $$
-
-### Underlying hypothesis on expected reward of unexplored actions 
-It can be checked that this estimator is what we get when we approximate the expected reward of 'unexplored' actions (with the definition allowing to use available data on all actions) by the expected reward when following $\pi_0$
+$$ \text{Approximate } \mathbb{E} _{ A \sim \pi_{test} } (R |  X =x , W \times U > 100 )  \text{  by:  }  \mathbb{E} _{ A \sim \pi_{test} } (R |  X =x , W \times U < 100 ) $$
 
 
-### An estimator of a modified policy
 
-It can be verified that this is an unbiased estimator or the following policy:
-
- - sample one action $a$ using $\pi_{test}$
- - compute the importance weight $w(a) := \frac{\pi_{test}(a)}{\pi_p(a)} $
- - draw a random number $u$ uniform in $[0;1]$ 
- - if $w(a) \times u  \leq c $ return $a$
- - else return a sample from $\pi_0$
-
-'Draw an action from $\pi_{test}$', if it is capped reject it and replace it with one sample of $\pi_0$ instead.
-
-### Implementation
-
-We could compute the additive correction $$1 - \mathbb{E}_{a \sim \pi_0}  min( c, w(a,xi) ))$$ explicitly by iterating on all actions, but this may be way too costly when the number of actions is large.
-
-Instead, we propose to compute it by Monte Carlo. This can be done with a very low variance by taking advantage of the following formula:
-
-$$ \mathbb{E}_{ \pi_0}  min( c, w(A,xi) )) = \sum_\limits{a} \pi_0(a) \times min( c, w(a,xi) )) = \sum_\limits{a} \pi_{test}(a)  \times \frac{ min( c, w(a,xi) ))}{w(a,x_i)}  = \mathbb{E}_{ \pi_{test}}  \frac{ min( c, w(A,xi) ))}{w(A,x_i)}  $$
-
-We therefore compute the estimate as follows:
- - For each line $i$ of the dataset, sample $$a'_i$$ from the policy $\pi_{test}$
- - Compute: $$ \sum\limits_i r_i \times ( min( c, w(a_i,xi) ) + 1 - \frac{min( c, w(a'_i,xi) )}{ w(a'_i,xi) }) $$
-
-Since the term we added to the capped importance weight is in $[0;1]$, the variance of this estimator is very close to the variance of the capped estimator.
-
-### Experimental results
-
-We implemented this estimator and compared its results with the previously proposed "pointwise capped normalized".
-We observed that:
-- It was giving almost the same results (Correlation was about 0.99)
-- But its variance was a bit lower. This was because in "pointwise capped normalized", when the normalization in too high, it may become difficult to find the correct capping value without drawing a lot of samples.
-- It requires one single sample of $\pi_{test}$, whereas "pointwise capped normalized" may need a lot of samples to be accurate.
-- Implementation is also significantly easier.
-
-The fact that the results are closely correlated is not really a surprise:
-The policy $\pi_{test}$ we test are usually not that far from $\pi_0$, which means that:
-
-- Probability of the "unexplored" actions is typically a few %
-- Difference in expected reward between both policies is typically no more than 1 or 2%.
-
-Overall, this mean that the difference in the hypothesis we used just change the result by a few %  on a few % of the dataset: overall, it is a second order effect which is usually far below the noise level.
-For all those reasons, we ended using mostly this version of the estimator.
+This last estimator is what we described in [Offline  A/B  Testing  for  Recommender  Systems](https://arxiv.org/abs/1801.07030).
+We realized after writing the paper that the "additive correction" presented above gave almost exactly the same results on our dataset, but with slightly less variance (The decreased variance was mostly explained by the imperfect computation of the capping threshold $c'$)
+It is also much easier to implement. For those reasons, we switched to using this "additive correction" instead of the "multiplicative correction" presented in the paper.
