@@ -28,7 +28,7 @@ We observed that we cannot get a low variance unbiased estimator for what happen
  - We could make a hypothesis on the average reward of those unobserved actions.
  - Or we could replace $\pi_{test}$ by an approximate policy $\pi_{test'}$ which should be as similar to $\pi_{test}$ as possible, while staying close enough from $\pi_0$ to keep low importance weights.
  
-Interestingly enough, both ideas may lead to the same estimator.
+Interestingly enough, both ideas may lead to the very similar estimators.
 
 ## An example
 
