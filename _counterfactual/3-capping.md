@@ -48,7 +48,7 @@ Or we could also redefine $R$ as 1 and apply the previous result, which would th
 ### Variance of $IPS$
 
 - $IPS$ is an average on $n$ independent samples of $W \times R$ , where we noted $W := w(A,X)$; so $Var(IPS) = \frac{1}{n} \times Var( W \times R ) $ 
-- While there is no simple formula for $Var( W \times R)$ , we may approximate it by assuming that $R$ and $W$ are independent. (This is wrong, but should give us the correct magnitude.)
+- While there is no simple formula for $Var( W \times R)$ , we may approximate it by assuming that $R$ and $W$ are independent. (This is wrong but should give us the correct magnitude.)
 
 We can then write:
 
@@ -66,16 +66,16 @@ Variance of $IPS$ is more or less proportional to $\mathbb{E}(W²)$.
 
 ### Variance of the importance weight
 
-So we should study $\mathbb{E}(W²) = Var(W)+1$.
+So we should study $\mathbb{E}(W²)$ . Since $\mathbb{E}(W)=1$, we have  $\mathbb{E}(W²) = Var(W)+1$.
 Let's look at this term on a few examples:
 
 ![w examples]({{site.repo_name}}/assets/images/reco_problem/w_with_different_pi.png){:class="img-responsive"}
 
-We can see on those examples that:
-- when $\pi_0$ is close to $\pi_{test}$ , the ratio  $\frac{\pi_{test}(a)}{\pi_0(a)}$  is always close from 1, and variance is low.
+We can see on these examples that:
+- when $\pi_0$ is close to $\pi_{test}$ , the ratio  $\frac{\pi_{test}(a)}{\pi_0(a)}$  is always close to 1, and variance is low.
 - if $\pi_0$ and $\pi_{test}$ are very different, the weight is almost 0 on most samples collected from $\pi_0$, but may take (with a low probability) some huge value. The variance is then driven by those outliers and is large.
 
-The worst case happens when $\pi_{test}$ puts all the mass on the action less likely according to $\pi_0$.
+The worst case happens when $\pi_{test}$ puts all its mass on the least likely action according to $\pi_0$.
 The weight $w$ is then either $\frac{1}{ min_a(\pi_0(a))}$ , with probability $ min_a(\pi_0(a))$ , or 0, and the variance is then $\frac{1}{ min_a(\pi_0(a))} -1 $.
 
 To summarize: <b> $IPS$ variance is high when the test policy $\pi_{test}$ assigns a significant probability to actions very unlikely under $\pi_0$. </b>
@@ -88,7 +88,7 @@ The reason is intuitively clear: such actions are not explored much by $\pi_0$, 
 There is one common pitfall when estimating the variance of $IPS$ estimator:
 sometimes the *empirical* variance of $IPS$, on some sample, may look small, while the true variance is not.
 
-Let us indeed look at what may happen on an example where an action has a probability very close to 0 under $\pi_0$.
+Let’s look at what may happen on an example where an action has a probability very close to 0 under $\pi_0$.
 
 | Policy | Action $a_1$ | Action $a_2$ |Action $a_3$ |
 | $\pi_0$ | $10^{-10}$ | $0.5-10^{-10}$ | 0.5 |
@@ -140,11 +140,11 @@ To summarize:
 | $IPS$        |  unbiased & low variance | unbiased, <span style="color:red">high variance</span>
 | capped $IPS$ | slightly biased, very low variance | <span style="color:red">biased</span>, low variance
 
-#### Capping or filtering ?
+#### Capping or filtering?
 
 In theory, capping is a slightly better bias-variance tradeoff, and should therefore be chosen.
-In practice, it made little difference on the dataset I observed. 
-"Filtering" is also easier to reason with, and in next post we will use it to get some intuitions on some methods to mitigate the bias. (We will also explain how to generalize those reasonings to "capping")
+In practice, it made little difference on the real datasets I observed. 
+"Filtering" is also easier to reason with, and in next post we will use it to get some intuitions on some methods to mitigate the bias. (We will also explain how to generalize to the "capping" situation)
 
 ### No unbiased low variance estimator when $\pi_{test}$ is far from $\pi_0$
 
@@ -158,5 +158,5 @@ The only way to ensure that the reward under any policy $\pi_{test}$ may be esti
  - when the action space is large, it is just not possible to assign a large probability to every action.
 
 
-In the next post, we will propose some additional hypotheses which seemed quite reasonable on our data at Criteo, and allowed to build some usable estimators for policies that are a bit further from $\pi_0$. (Well, not *too* far either, there is just no magic for that! )
+In the next post, we will propose some additional hypotheses which seemed quite reasonable on our data at Criteo and allowed to build some usable estimators for policies that are a bit further from $\pi_0$. (Well, not *too* far either, there is just no magic for that!)
 
